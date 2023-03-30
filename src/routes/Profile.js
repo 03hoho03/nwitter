@@ -1,5 +1,5 @@
 import { authService } from "fbase";
-import { Navigate, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import React, { useState } from "react";
 import { updateProfile } from "firebase/auth";
 
