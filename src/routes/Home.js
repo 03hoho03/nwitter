@@ -7,15 +7,15 @@ import {
   query,
   orderBy,
 } from "firebase/firestore";
-import Nweet from 'components/Nweet'
-import { ref, uploadString } from '@firebase/storage';
-import { v4 } from 'uuid';
+import Nweet from "components/Nweet";
+import { ref, uploadString, getDownloadURL } from "@firebase/storage";
+import { v4 } from "uuid";
 import { async } from "@firebase/util";
 
 const Home = ({ userObj }) => {
   const [nweet, setNweet] = useState("");
   const [nweets, setNweets] = useState([]);
-  const [attachment, setAttachment] = useState('');
+  const [attachment, setAttachment] = useState("");
   const fileInput = useRef();
 
   // const getNweets = async () => {
@@ -45,20 +45,30 @@ const Home = ({ userObj }) => {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    const fileRef = ref(storageService, `${userObj.uid}/${v4()}`);
-    const response = await uploadString(fileRef, attachment, 'data_url');
-    console.log(response);
-    // try {
-    //   const docRef = await addDoc(collection(dbService, "nweets"), {
-    //     text: nweet,
-    //     createdAt: Date.now(),
-    //     creatorId: userObj.uid,
-    //   });
-    //   console.log("Document written with ID: ", docRef.id);
-    // } catch (error) {
-    //   console.error("Error adding document: ", error);
-    // }
-    // setNweet("");
+    let attachmentURL;
+    if (attachment !== "") {
+      const attachmentRef = ref(storageService, `${userObj.uid}/${v4()}`);
+      const response = await uploadString(
+        attachmentRef,
+        attachment,
+        "data_url"
+      );
+      attachmentURL = await getDownloadURL(response.ref);
+    }
+    try {
+      const docRef = await addDoc(collection(dbService, "nweets"), {
+        text: nweet,
+        createdAt: Date.now(),
+        creatorId: userObj.uid,
+        attachmentURL: attachmentURL,
+      });
+      console.log("Document written with ID: ", docRef.id);
+    } catch (error) {
+      console.error("Error adding document: ", error);
+    }
+    console.log(attachmentURL);
+    setNweet("");
+    setAttachment("");
   };
   const onChange = (e) => {
     const {
@@ -67,20 +77,26 @@ const Home = ({ userObj }) => {
     setNweet(value);
   };
   const onFileChange = (event) => {
-    const { target: { files } } = event;
+    const {
+      target: { files },
+    } = event;
     const theFile = files[0];
     console.log(theFile);
-    const reader = new FileReader();
-    reader.onloadend = (finishedEvent) => {
-      const { currentTarget: { result } } = finishedEvent;
-      setAttachment(result);
+    if (theFile) {
+      const reader = new FileReader();
+      reader.onloadend = (finishedEvent) => {
+        const {
+          currentTarget: { result },
+        } = finishedEvent;
+        setAttachment(result);
+      };
+      reader.readAsDataURL(theFile);
     }
-    reader.readAsDataURL(theFile);
-  }
+  };
   const onClearAttachment = () => {
-    setAttachment('');
-    fileInput.current.value = '';
-  }
+    setAttachment("");
+    fileInput.current.value = "";
+  };
   return (
     <>
       <form onSubmit={onSubmit}>
@@ -91,11 +107,16 @@ const Home = ({ userObj }) => {
           value={nweet}
           onChange={onChange}
         />
-        <input type="file" accept='image/*' onChange={onFileChange} ref={fileInput} />
+        <input
+          type="file"
+          accept="image/*"
+          onChange={onFileChange}
+          ref={fileInput}
+        />
         <input type="submit" value="Nweet" />
         {attachment && (
           <div>
-            <img src={attachment} width='50px' height='50px' />
+            <img src={attachment} width="50px" height="50px" />
             <button onClick={onClearAttachment}>Clear</button>
           </div>
         )}
@@ -103,7 +124,11 @@ const Home = ({ userObj }) => {
       <div>
         {nweets.map((nweet) => {
           return (
-            <Nweet key={nweet.id} nweetObj={nweet} isOwner={nweet.creatorId === userObj.uid} />
+            <Nweet
+              key={nweet.id}
+              nweetObj={nweet}
+              isOwner={nweet.creatorId === userObj.uid}
+            />
           );
         })}
       </div>
