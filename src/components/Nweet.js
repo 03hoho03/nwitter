@@ -11,7 +11,6 @@ const Nweet = ({ nweetObj, isOwner }) => {
 
   const onDeleteClick = async () => {
     const ok = window.confirm("Are you sure you want to delete this nweet?");
-    console.log(ok);
     if (ok) {
       const NweetTextRef = doc(dbService, "nweets", `${nweetObj.id}`);
       await deleteDoc(NweetTextRef);
@@ -62,7 +61,7 @@ const Nweet = ({ nweetObj, isOwner }) => {
           <h4>{nweetObj.text}</h4>
           {nweetObj.attachmentURL && <img src={nweetObj.attachmentURL} />}
           {isOwner ? (
-            <div class="nweet__actions">
+            <div className="nweet__actions">
               <span onClick={onDeleteClick}>
                 <FontAwesomeIcon icon={faTrash} />
               </span>
